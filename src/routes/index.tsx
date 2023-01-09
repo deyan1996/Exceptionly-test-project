@@ -1,13 +1,7 @@
 import NProgress from 'nprogress';
 import {
-  Route, Switch, BrowserRouter, Redirect
-} from 'react-router-dom';
-import {
   lazy, useEffect, Suspense, Fragment
 } from 'react';
-import GuestProtect from '../components/Auth/GuestProtect';
-import AuthProtect from '../components/Auth/AuthProtect';
-import HomeLayout from '../layout/HomeLayout';
 
 interface IRoute {
     exact?: boolean;
