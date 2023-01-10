@@ -5,10 +5,8 @@ import { Alert, Box, Button, Divider, Typography } from '@mui/material';
 
 import SigninForm from '../components/auth/SigninForm';
 import SignupForm from '../components/auth/SignupForm';
-import { useFirebase } from '../context/firebase';
 
 const Auth = () => {
-  const { signInWithGoogle, signInWithMicrosoft } = useFirebase();
   const [authMode, setAuthMode] = useState('signin');
 
   const handleClickSignup = useCallback(() => {
@@ -81,7 +79,6 @@ const Auth = () => {
                 <>
                   <Box className="signInGroup">
                     <Button
-                      onClick={signInWithGoogle}
                       variant="contained"
                       color="primary"
                       startIcon={<Google />}
@@ -102,7 +99,6 @@ const Auth = () => {
                       SIGN IN WITH LINKEDIN
                     </Button>
                     <Button
-                      onClick={signInWithMicrosoft}
                       variant="contained"
                       color="warning"
                       startIcon={<Window />}
