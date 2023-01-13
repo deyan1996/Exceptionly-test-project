@@ -24,6 +24,7 @@ type FirebaseStateType = {
   logoutUserFromFirebase: () => Promise<void>;
 };
 
+// Init
 firebase.initializeApp(FIREBASE_CONFIG);
 const FirebaseContext = createContext<FirebaseStateType | undefined>(undefined);
 
@@ -37,6 +38,7 @@ function FirebaseProvider({ children }: FirebaseProviderPropsType) {
 
   const microsoftProvider = new firebase.auth.OAuthProvider('microsoft.com');
 
+  // AUTHENTICATION
   const [user, setUser] = useState<firebase.User | null>(null);
   const [token, setToken] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,9 @@ function FirebaseProvider({ children }: FirebaseProviderPropsType) {
     setIsFetchingUser(false);
   });
 
+  /**
+   * Register a user using email and password.
+   */
   const registerWithCredentials = async (email: string, password: string) => {
     try {
       const { user } = await auth.createUserWithEmailAndPassword(email, password);
@@ -85,6 +90,9 @@ function FirebaseProvider({ children }: FirebaseProviderPropsType) {
     }
   };
 
+  /**
+   * Login a user using email and password.
+   */
   const loginWithCredentials = async (email: string, password: string) => {
     try {
       await auth.signInWithEmailAndPassword(email, password);
@@ -145,6 +153,50 @@ function FirebaseProvider({ children }: FirebaseProviderPropsType) {
     }
   };
 
+  const signInWithMicrosoft = async () => {
+    try {
+      const { user } = await auth.signInWithPopup(microsoftProvider);
+
+      if (!user) {
+        setError('No user was found');
+        return;
+      }
+
+      const result = await getDocs(query(userRef, where('uid', '==', user.uid)));
+
+      if (result.empty) {
+        await addDoc(collection(db, 'users'), {
+          uid: user.uid,
+          name: user.displayName,
+          authProvider: 'microsoft',
+          email: user.email
+        });
+      }
+    } catch (error) {
+      const e = error as AuthError & { email: string };
+      const errorCode = e.code;
+      const email = e.email;
+      const errorMessage = e.message;
+      if (errorCode === 'auth/account-exists-with-different-credential') {
+        auth.fetchSignInMethodsForEmail(email).then(function (providers) {
+          // figure out what to do here later
+          console.log(providers);
+        });
+      } else if (errorCode === 'auth/network-request-failed') {
+        setError('Request failed. Check your internet connection and try again.');
+      } else {
+        setError(errorMessage);
+      }
+    }
+  };
+
+  /**
+   * Logout a user.
+   */
+  const logoutUserFromFirebase = async () => {
+    await auth.signOut();
+  };
+
   return (
     <FirebaseContext.Provider
       value={{
@@ -156,12 +208,17 @@ function FirebaseProvider({ children }: FirebaseProviderPropsType) {
         registerWithCredentials,
         loginWithCredentials,
         signInWithGoogle,
+        signInWithMicrosoft,
+        logoutUserFromFirebase
       }}>
       {children}
     </FirebaseContext.Provider>
   );
 }
 
+/**
+ * Provides access to auth state and functions.
+ */
 function useFirebase() {
   const context = useContext(FirebaseContext);
 
@@ -172,4 +229,4 @@ function useFirebase() {
   return context;
 }
 
-export { useFirebase };
+export { FirebaseProvider, useFirebase };
